@@ -5,13 +5,7 @@ from passlib.hash import sha256_crypt
 from functools import wraps
 
 app = Flask(__name__)
-
-# Config MySQL Database
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'root'
-app.config['MYSQL_DB'] = 'blog'
-app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+app.config.from_pyfile('config.cfg')
 
 # init MySQL
 mysql = MySQL(app)
