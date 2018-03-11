@@ -10,6 +10,7 @@ build/
 include/
 lib/
 bin/
+migration/
 *.egg
 *.egg-info/
 _mailinglist
