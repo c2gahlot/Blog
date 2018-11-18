@@ -21,3 +21,4 @@ _mailinglist
 .Python
 .bin/
 pip-selfcheck.json
+scotch_configure.sh

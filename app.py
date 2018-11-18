@@ -6,19 +6,23 @@ from functools import wraps
 
 app = Flask(__name__)
 app.config.from_pyfile('config.cfg')
+app.secret_key = 'secret'
 
 # init MySQL
 mysql = MySQL(app)
+
 
 # Index
 @app.route('/')
 def index():
     return render_template('index.html')
 
+
 # About
 @app.route('/about')
 def about():
     return render_template('about.html')
+
 
 # Articles
 @app.route('/articles')
@@ -40,6 +44,7 @@ def articles():
         msg = 'No Articles Found'
         return render_template('articles.html')
 
+
 # Single Article
 @app.route('/article/<id>/')
 def article(id):
@@ -56,6 +61,7 @@ def article(id):
 
     return render_template('article.html', article=article)
 
+
 # Register Form Class
 class RegisterForm(Form):
     name = StringField('First Name', validators=[validators.Length(min=1, max=50)])
@@ -66,6 +72,7 @@ class RegisterForm(Form):
         validators.EqualTo('confirm', message='Passwords do not match')
     ])
     confirm = PasswordField('Confirm Password')
+
 
 # Register User
 @app.route('/register', methods=['GET', 'POST'])
@@ -95,10 +102,11 @@ def register():
 
     return render_template('register.html', form=form)
 
+
 # Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST' :
+    if request.method == 'POST':
 
         # get form fields
         username = request.form['username']
@@ -141,8 +149,8 @@ def login():
             error = 'Username Not Found'
             return render_template('login.html', error=error)
 
-
     return render_template('login.html')
+
 
 # Check if user logged in
 def is_logged_in(f):
@@ -152,7 +160,8 @@ def is_logged_in(f):
             return f(*args, **kwargs)
         else:
             flash('Unauthorized, Please login', 'danger')
-            return  redirect(url_for('login'))
+            return redirect(url_for('login'))
+
     return wrap
 
 
@@ -164,39 +173,41 @@ def logout():
     flash('You are now logged out', 'success')
     return redirect(url_for('login'))
 
+
 # Dashboard
 @app.route('/dashboard')
 @is_logged_in
 def dashboard():
+    # create cursor
+    cur = mysql.connection.cursor()
 
-        # create cursor
-        cur = mysql.connection.cursor()
+    # execute
+    results = cur.execute("SELECT * FROM articles")
 
-        # execute
-        results = cur.execute("SELECT * FROM articles")
+    articles = cur.fetchall()
 
-        articles = cur.fetchall()
+    # close connection
+    cur.close()
 
-        # close connection
-        cur.close()
+    if results > 0:
+        return render_template('dashboard.html', articles=articles)
+    else:
+        msg = 'No Articles Found'
+        return render_template('dashboard.html')
 
-        if results > 0:
-            return render_template('dashboard.html', articles=articles)
-        else:
-            msg = 'No Articles Found'
-            return render_template('dashboard.html')
 
 # Article Form Class
 class ArticleForm(Form):
     title = StringField('Title', validators=[validators.Length(min=1, max=200)])
     body = TextAreaField('body', validators=[validators.Length(min=30)])
 
+
 # Add Article
 @app.route('/add_article', methods=['GET', 'POST'])
 @is_logged_in
 def add_article():
     form = ArticleForm(request.form)
-    if(request.method == 'POST' and form.validate()):
+    if (request.method == 'POST' and form.validate()):
         title = form.title.data
         body = form.body.data
 
@@ -204,7 +215,8 @@ def add_article():
         cur = mysql.connection.cursor()
 
         # exceute
-        cur.execute("INSERT INTO articles (title, body, author) VALUES (%s, %s, %s)", (title, body, session['username']))
+        cur.execute("INSERT INTO articles (title, body, author) VALUES (%s, %s, %s)",
+                    (title, body, session['username']))
 
         # commit
         mysql.connection.commit()
@@ -217,11 +229,11 @@ def add_article():
 
     return render_template('add_article.html', form=form)
 
+
 # Edit Article
 @app.route('/edit_article/<id>', methods=['GET', 'POST'])
 @is_logged_in
 def edit_article(id):
-
     # create cursor
     cur = mysql.connection.cursor()
 
@@ -241,7 +253,7 @@ def edit_article(id):
     form.title.data = article['title']
     form.body.data = article['body']
 
-    if(request.method == 'POST' and form.validate()):
+    if (request.method == 'POST' and form.validate()):
         title = request.form['title']
         body = request.form['body']
 
@@ -262,11 +274,11 @@ def edit_article(id):
 
     return render_template('edit_article.html', form=form)
 
+
 # Delete Article
 @app.route('/delete_article/<id>', methods=['POST'])
 @is_logged_in
 def delete_article(id):
-
     # create cursor
     cur = mysql.connection.cursor()
 
@@ -284,5 +296,5 @@ def delete_article(id):
 
 
 if __name__ == '__main__':
-    app.secret_key='secret'
-    app.run(debug=True)
+    app.secret_key = 'secret'
+    app.run()
